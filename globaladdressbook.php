@@ -8,7 +8,7 @@
  * @version 1.4
  * @author Philip Weir
  */
-class globaladdressbook extends rcube_plugin
+class globaladdressbook extends crystal_plugin
 {
 	public $task = 'mail|addressbook';
 	private $abook_id = 'global';
@@ -20,20 +20,20 @@ class globaladdressbook extends rcube_plugin
 
 	public function init()
 	{
-		$rcmail = rcmail::get_instance();
+		$cmail = cmail::get_instance();
 		$this->load_config();
-		$this->user_name = $rcmail->config->get('globaladdressbook_user');
-		$this->user_name = str_replace('%d', $rcmail->user->get_username('domain'), $this->user_name);
+		$this->user_name = $cmail->config->get('globaladdressbook_user');
+		$this->user_name = str_replace('%d', $cmail->user->get_username('domain'), $this->user_name);
 		$this->user_name = str_replace('%h', $_SESSION['imap_host'], $this->user_name);
 		$this->readonly = $this->_is_readonly();
-		$this->groups = $rcmail->config->get('globaladdressbook_groups', false);
+		$this->groups = $cmail->config->get('globaladdressbook_groups', false);
 
 		// check if the global address book user exists
-		if (!($user = rcube_user::query($this->user_name, $this->host))) {
+		if (!($user = crystal_user::query($this->user_name, $this->host))) {
 			// this action overrides the current user information so make a copy and then restore it
-			$cur_user = $rcmail->user;
-			$user = rcube_user::create($this->user_name, $this->host);
-			$rcmail->user = $cur_user;
+			$cur_user = $cmail->user;
+			$user = crystal_user::create($this->user_name, $this->host);
+			$cmail->user = $cur_user;
 
 			// prevent new_user_dialog plugin from triggering
 			$_SESSION['plugin.newuserdialog'] = false;
@@ -42,11 +42,11 @@ class globaladdressbook extends rcube_plugin
 		$this->user_id = $user->ID;
 
 		// use this address book for autocompletion queries
-		if ($rcmail->config->get('globaladdressbook_autocomplete')) {
-			$sources = $rcmail->config->get('autocomplete_addressbooks', array('sql'));
+		if ($cmail->config->get('globaladdressbook_autocomplete')) {
+			$sources = $cmail->config->get('autocomplete_addressbooks', array('sql'));
 			if (!in_array($this->abook_id, $sources)) {
 				$sources[] = $this->abook_id;
-				$rcmail->config->set('autocomplete_addressbooks', $sources);
+				$cmail->config->set('autocomplete_addressbooks', $sources);
 			}
 		}
 
@@ -64,7 +64,7 @@ class globaladdressbook extends rcube_plugin
 	public function get_address_book($args)
 	{
 		if ($args['id'] === $this->abook_id) {
-			$args['instance'] = new rcube_contacts(rcmail::get_instance()->db, $this->user_id);
+			$args['instance'] = new crystal_contacts(cmail::get_instance()->db, $this->user_id);
 			$args['instance']->readonly = $this->readonly;
 			$args['instance']->groups = $this->groups;
 		}
@@ -74,12 +74,12 @@ class globaladdressbook extends rcube_plugin
 
 	private function _is_readonly()
 	{
-		$rcmail = rcmail::get_instance();
+		$cmail = cmail::get_instance();
 
-		if (!$rcmail->config->get('globaladdressbook_readonly'))
+		if (!$cmail->config->get('globaladdressbook_readonly'))
 			return false;
 
-		if ($admin = $rcmail->config->get('globaladdressbook_admin')) {
+		if ($admin = $cmail->config->get('globaladdressbook_admin')) {
 			if (!is_array($admin)) $admin = array($admin);
 
 			foreach ($admin as $user) {
